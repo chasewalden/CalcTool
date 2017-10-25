@@ -8,6 +8,8 @@ nowrite(T).
 nonl.
 
 :- [calculus].
+:- [matrix].
+
 
 startServer(PORT) :-
 http_server(http_dispatch, [port(PORT)]).
@@ -15,7 +17,12 @@ http_server(http_dispatch, [port(PORT)]).
 :- http_handler(root(.), homepage, []).
 :- http_handler(root(derive), derivepage, []).
 :- http_handler(root(integrate), integratepage, []).
+:- http_handler(root(matrix), matrixpage, []).
 
+
+navitem("Derivative", "plus" ,"/derive").
+navitem("Integral", "signal", "/integrate").
+navitem("Matrices", "th", "/matrix").
 
 homepage(_Request) :- pagetemplate("Home",
     html([
@@ -33,13 +40,13 @@ derivepage(Request) :-
             div(class("form-inline"), [
                 form([action='derive', method='POST'],[
                     p(class("form-group"),[
-                        label([for=function], "f(x) = "),
+                        label([class="control-label", for=function], "f(x) = "),
                         input([class="form-control", name=function, type=textarea, value=Func]),
                         input([class="form-control", name=submit, type=submit, value="Derive"])
                     ])
                 ]),
                 p(class("form-group"),[
-                    label([for=derivative], "f'(x) = "),
+                    label([class="control-label", for=derivative], "f'(x) = "),
                     input([class="form-control", name=derivative, type=textarea, value=Deriv])
                 ])
             ])
@@ -57,14 +64,50 @@ integratepage(Request) :-
             div(class("form-inline"), [
             form([action='integrate', method='POST'],[
                 p(class("form-group"),[
-                    label([for=function], "f(x) = "),
+                    label([class="control-label", for=function], "f(x) = "),
                     input([class="form-control", name=function, type=textarea, value=Func]),
                     input([class="form-control", name=submit, type=submit, value="Integrate"])
                 ])
             ]),
             p(class("form-group"),[
-                label([for=derivative], "F(x) = "),
+                label([class="control-label", for=derivative], "F(x) = "),
                 input([class="form-control", name=derivative, type=textarea, value=Integ])
+            ])
+        ])
+    ])
+).
+
+matrixfunction("invert", "A^(-1) = ").
+matrixfunction("rref", "RREF(A) = ").
+matrixfunction("multiply", "A ○ B = ").
+
+matrixpage(Request) :-
+    get_matrix_args(Request, Func, MA, MB),
+    term_string(A, MA), term_string(B, MB),
+    do_matrix(Func, A, B, O),
+    term_string(O, MO),
+    matrixfunction(Func, ResultLabel),
+    pagetemplate("Integrate",
+        html([
+            div(class("form-horizontal"),[
+            form([action='matrix', method='POST'],[
+                p(class("form-group"),[
+                    label([class="control-label", for=matrixA], "A = "),
+                    input([class="form-control", name=matrixA, type=textarea, value=MA])
+                ]),
+                p(class("form-group"),[
+                    label([class="control-label", for=matrixB], "B = "),
+                    input([class="form-control", name=matrixB, type=textarea, value=MB])
+                ]),
+                p(class("form-group"),[
+                    button([class="form-control", name=submit, type=submit, value="multiply"], "Multiply"),
+                    button([class="form-control", name=submit, type=submit, value="invert"], "Invert A"),
+                    button([class="form-control", name=submit, type=submit, value="rref"], "RREF A")
+                ])
+            ]),
+            p(class("form-group"),[
+                label([class="control-label", for=derivative], ResultLabel),
+                input([class="form-control", name=derivative, type=textarea, value=MO])
             ])
         ])
     ])
@@ -75,6 +118,18 @@ get_function(Request, Func) :- member(method(post), Request),
         http_parameters(Request, [
             function(Func, [default(""), string])
         ]).
+
+get_matrix_args(Request, "multiply", "[[1,2],[3,4]]", "[[1,2],[3,4]]") :- member(method(get), Request), !.
+get_matrix_args(Request, S, MA, MB) :- member(method(post), Request),
+    http_parameters(Request, [
+        submit(S, [string]),
+        matrixA(MA, [default("[[1,2],[3,4]]"), string]),
+        matrixB(MB, [default("[[1,2],[3,4]]"), string])
+    ]).
+
+do_matrix("multiply", A, B, O) :- dotProductMatrix(A,B,O).
+do_matrix("invert", A, _, O) :- invertMatrix(A,O).
+do_matrix("rref", A, _, O) :- reducedEchelon(A,O).
 
 
 css(URL) --> html(link([
@@ -92,9 +147,6 @@ pagetemplate(Name, Content) :- string_concat("Calc Tool - ", Name, Title), reply
     [Content]
 ).
 
-
-navitem("Derivative", "plus" ,"/derive").
-navitem("Integral", "signal", "/integrate").
 
 nav_bar --> {
     findall(N, navitem(N, _, _), ButtonNames),
