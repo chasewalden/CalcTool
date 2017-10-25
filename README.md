@@ -1,6 +1,6 @@
 # CalcTool
 
-A simple deriving and integrating calculator made in Prolog.
+### A simple deriving and integrating calculator made in Prolog.
 
 _for CPSC-312 101_
 
