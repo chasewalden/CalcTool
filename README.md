@@ -8,10 +8,10 @@ _written by Ambikeya Sangwan, Chase Walden, and Edward Tunnard_
 
 ## How to use.
 
-- Clone the project
-- Navigate to the directory in terminal.
-- Run `swipl` in the project directory.
-- Enter `?- [web_serv].` to import the file.
-- Finally, enter `?- startServer(8000)`.
+1. Clone the project
+2. Navigate to the directory in terminal.
+3. Run `swipl` in the project directory.
+4. Enter `?- [web_serv].` to import the file.
+5. Finally, enter `?- startServer(8000)`.
 
 This will start an instance of the website running at `http://localhost:8000`.
